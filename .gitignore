@@ -1,0 +1,15 @@
+# Build artifacts
+*.bin
+*.hex
+*.elf
+*.o
+*.map
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Temp files
+*.bak
