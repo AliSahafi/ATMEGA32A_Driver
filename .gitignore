@@ -4,12 +4,15 @@
 *.elf
 *.o
 *.map
+a.out
 
 # macOS
 .DS_Store
 
-# VS Code
+# VS Code / IDE
 .vscode/
+.cache/
+compile_commands.json
 
 # Temp files
 *.bak
