@@ -18,18 +18,62 @@ Designed for students and educators to get an Arduino-like development experienc
 
 ---
 
-## Requirements
+## Installation
 
-- `avr-g++` (AVR GCC toolchain)
-- `avr-objcopy`
-- `avrdude` with a USBasp programmer
-- `make`
-
-Install on macOS with Homebrew:
+### macOS
+Install via [Homebrew](https://brew.sh):
 ```bash
 brew tap osx-cross/avr
 brew install avr-gcc avrdude
 ```
+
+---
+
+### Linux (Ubuntu / Debian)
+```bash
+sudo apt update
+sudo apt install gcc-avr binutils-avr avr-libc avrdude make
+```
+
+For other distros (Arch, Fedora):
+```bash
+# Arch
+sudo pacman -S avr-gcc avr-libc avrdude
+
+# Fedora
+sudo dnf install avr-gcc avr-libc avrdude
+```
+
+> **USBasp on Linux:** You may need to add a udev rule so `avrdude` can access the programmer without `sudo`. Create the file below and reload:
+> ```bash
+> echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="16c0", ATTR{idProduct}=="05dc", MODE="0666"' \
+>   | sudo tee /etc/udev/rules.d/99-usbasp.rules
+> sudo udevadm control --reload-rules && sudo udevadm trigger
+> ```
+
+---
+
+### Windows
+
+**Option A — WinAVR (simple, all-in-one installer)**
+1. Download **WinAVR** from [https://winavr.sourceforge.net](https://winavr.sourceforge.net)
+2. Run the installer — it adds `avr-g++`, `make`, and `avrdude` to your PATH automatically.
+
+**Option B — Atmel/Microchip Toolchain + Zadig (recommended for newer boards)**
+1. Download the **AVR 8-bit Toolchain** from [microchip.com](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio)
+2. Download and install **avrdude for Windows** from [https://github.com/mariusgreuel/avrdude/releases](https://github.com/mariusgreuel/avrdude/releases)
+3. Install **make** via [Chocolatey](https://chocolatey.org):
+   ```powershell
+   choco install make
+   ```
+4. Install the **USBasp driver** using [Zadig](https://zadig.akeo.ie):
+   - Plug in your USBasp programmer
+   - Open Zadig → select your USBasp device → install **WinUSB** driver
+
+**Running `make` on Windows:**
+Use either:
+- **Git Bash** (comes with Git for Windows) — run `make` directly
+- **PowerShell / Command Prompt** — requires `make` on PATH (Chocolatey installs it)
 
 ---
 
