@@ -16,3 +16,6 @@ compile_commands.json
 
 # Temp files
 *.bak
+
+# Claude Code
+CLAUDE.md

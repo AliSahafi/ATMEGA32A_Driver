@@ -43,7 +43,8 @@ GPIO.write(PORTB, PB0, HIGH);
 GPIO.write(PORTB, ALL, LOW);
 
 // Read
-uint8_t val = GPIO.read(PINB, PB0);   // Returns HIGH or LOW
+uint8_t val  = GPIO.read(PINB, PB0);   // Returns HIGH or LOW
+uint8_t port = GPIO.read(PINB, ALL);   // Returns raw port byte (0–255)
 
 // Toggle
 GPIO.toggle(PORTB, PB0);
@@ -102,11 +103,11 @@ sei();
 ```cpp
 // Timer 0 — 8-bit, OCR max 255
 // Tick rate: F_CPU / (prescaler * (ocr + 1))
-Timer.initTimer0(124, TIMER_PRESCALER_64);    // 1ms tick at 8MHz
+Timer.initTimer0(124, TIMER0_PRESCALER_64);    // 1ms tick at 8MHz
 Timer.attachTimer0(myCallback);               // void myCallback()
 
 // Timer 1 — 16-bit, OCR max 65535
-Timer.initTimer1(31249, TIMER_PRESCALER_256); // 1s tick at 8MHz
+Timer.initTimer1(31249, TIMER1_PRESCALER_256); // 1s tick at 8MHz
 Timer.attachTimer1(myCallback);
 
 // Timer 2 — 8-bit (uses TIMER2_PRESCALER_xxx!)
@@ -119,11 +120,12 @@ Timer.delay_ms(500);
 sei();  // Always call after setup to enable interrupts
 ```
 
-> ⚠️ **Timer prescaler note:** Timer2 uses a different prescaler encoding than Timer0/1.  
-> Always use `TIMER2_PRESCALER_xxx` for Timer2 and `TIMER_PRESCALER_xxx` for Timer0/1.
+**Timer0/1 Prescaler:** `TIMER0_PRESCALER_1/8/64/256/1024` — `TIMER1_PRESCALER_1/8/64/256/1024`  
+**Timer2 Prescaler:** `TIMER2_PRESCALER_1/8/32/64/128/256/1024` *(different encoding — always use `TIMER2_PRESCALER_xxx` for Timer2)*
 
-> ⚠️ **PWM conflict:** PWM uses Timer0 and Timer1 internally.  
-> Do NOT use `Timer.initTimer0()` and `PWM.initTimer0_FastPWM()` at the same time.
+> ⚠️ **PWM conflict:** PWM uses Timer0 and Timer1 internally.
+
+> ⚠️ **PWM conflict:** PWM uses Timer0 and Timer1 internally. Do NOT use `Timer.initTimer0()` and `PWM.initTimer0_FastPWM()` at the same time.
 
 ---
 
@@ -178,7 +180,7 @@ int main() {
     ADC.attachInterrupt(onADCReady);
     ADC.startContinuous(ADC_CHANNEL_0);
 
-    Timer.initTimer1(31249, TIMER_PRESCALER_256);
+    Timer.initTimer1(31249, TIMER1_PRESCALER_256);
     Timer.attachTimer1(onTimer1);
 
     sei();

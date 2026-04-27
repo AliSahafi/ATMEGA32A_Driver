@@ -192,13 +192,12 @@ public:
   static inline void startContinuous(uint8_t channel = 0) {
     ADMUX = (ADMUX & 0xF8) | (channel & 0x07);
     ADCSRA |= (1 << ADATE); // Enable Auto Triggering
-    SFIOR &= ~((1 << ADTS2) | (1 << ADTS1) | (1 << ADTS0)); // Set to Free Running Mode
-    ADCSRA |= (1 << ADSC); // Start the first conversion
+    SFIOR &= ~((1 << ADTS2) | (1 << ADTS1) |
+               (1 << ADTS0)); // Set to Free Running Mode
+    ADCSRA |= (1 << ADSC);    // Start the first conversion
   }
 
-  static inline void stopContinuous() {
-    ADCSRA &= ~(1 << ADATE);
-  }
+  static inline void stopContinuous() { ADCSRA &= ~(1 << ADATE); }
 
   static inline void attachInterrupt(void (*callback)(uint16_t)) {
     adcInterruptCallback = callback;
@@ -221,12 +220,9 @@ static ADC_Driver ADC;
 
 // ---------------------------------------------------------
 // PWM Driver
-// NOTE: PWM uses Timer0 and Timer1 in Fast-PWM mode.
-// Do NOT use Timer.initTimer0() or Timer.initTimer1() at the same time as PWM!
 // ---------------------------------------------------------
 class PWM_Driver {
 public:
-  // Timer 0 Fast-PWM: output on PB3 (OC0), prescaler = /8
   static inline void initTimer0_FastPWM() {
     DDRB |= (1 << PB3);
     TCCR0 = (1 << WGM00) | (1 << WGM01) | (1 << COM01) | (1 << CS01);
@@ -234,7 +230,6 @@ public:
 
   static inline void setDutyCycleTimer0(uint8_t duty) { OCR0 = duty; }
 
-  // Timer 1 Fast-PWM 8-bit: output on PD4 (OC1B) and PD5 (OC1A), prescaler = /8
   static inline void initTimer1_FastPWM_8bit() {
     DDRD |= (1 << PD4) | (1 << PD5);
     TCCR1A = (1 << WGM10) | (1 << COM1A1) | (1 << COM1B1);
@@ -250,20 +245,25 @@ static PWM_Driver PWM;
 // ---------------------------------------------------------
 // Timer Driver
 // ---------------------------------------------------------
-// Timer 0 & 1 prescaler bits (shared encoding)
-#define TIMER_PRESCALER_1    1
-#define TIMER_PRESCALER_8    2
-#define TIMER_PRESCALER_64   3
-#define TIMER_PRESCALER_256  4
-#define TIMER_PRESCALER_1024 5
+#define TIMER0_PRESCALER_1 1
+#define TIMER0_PRESCALER_8 2
+#define TIMER0_PRESCALER_64 3
+#define TIMER0_PRESCALER_256 4
+#define TIMER0_PRESCALER_1024 5
 
-// Timer 2 has a different prescaler encoding on ATMEGA32A!
-#define TIMER2_PRESCALER_1    1
-#define TIMER2_PRESCALER_8    2
-#define TIMER2_PRESCALER_32   3
-#define TIMER2_PRESCALER_64   4
-#define TIMER2_PRESCALER_128  5
-#define TIMER2_PRESCALER_256  6
+#define TIMER1_PRESCALER_1 1
+#define TIMER1_PRESCALER_8 2
+#define TIMER1_PRESCALER_64 3
+#define TIMER1_PRESCALER_256 4
+#define TIMER1_PRESCALER_1024 5
+
+// Timer2 has a different CS bit encoding than Timer0/1
+#define TIMER2_PRESCALER_1 1
+#define TIMER2_PRESCALER_8 2
+#define TIMER2_PRESCALER_32 3
+#define TIMER2_PRESCALER_64 4
+#define TIMER2_PRESCALER_128 5
+#define TIMER2_PRESCALER_256 6
 #define TIMER2_PRESCALER_1024 7
 
 class Timer_Driver {
@@ -275,9 +275,10 @@ private:
 public:
   // --- Timer 0 (8-bit CTC) ---
   // Fires every (prescaler * (ocr + 1)) / F_CPU seconds
-  static inline void initTimer0(uint8_t ocr_val, uint8_t prescaler = TIMER_PRESCALER_64) {
+  static inline void initTimer0(uint8_t ocr_val,
+                                uint8_t prescaler = TIMER0_PRESCALER_64) {
     TCCR0 = (1 << WGM01) | (prescaler & 0x07); // CTC mode
-    OCR0  = ocr_val;
+    OCR0 = ocr_val;
     TIMSK |= (1 << OCIE0);
   }
 
@@ -286,15 +287,17 @@ public:
   }
 
   static inline void handleTimer0() {
-    if (timer0Callback) timer0Callback();
+    if (timer0Callback)
+      timer0Callback();
   }
 
   // --- Timer 1 (16-bit CTC) ---
   // Use OCR1A to set the compare value (up to 65535)
-  static inline void initTimer1(uint16_t ocr_val, uint8_t prescaler = TIMER_PRESCALER_64) {
+  static inline void initTimer1(uint16_t ocr_val,
+                                uint8_t prescaler = TIMER1_PRESCALER_64) {
     TCCR1A = 0;
     TCCR1B = (1 << WGM12) | (prescaler & 0x07); // CTC mode
-    OCR1A  = ocr_val;
+    OCR1A = ocr_val;
     TIMSK |= (1 << OCIE1A);
   }
 
@@ -303,14 +306,15 @@ public:
   }
 
   static inline void handleTimer1() {
-    if (timer1Callback) timer1Callback();
+    if (timer1Callback)
+      timer1Callback();
   }
 
   // --- Timer 2 (8-bit CTC) ---
-  // NOTE: Timer 2 uses its own prescaler encoding — use TIMER2_PRESCALER_xxx defines!
-  static inline void initTimer2(uint8_t ocr_val, uint8_t prescaler = TIMER2_PRESCALER_64) {
+  static inline void initTimer2(uint8_t ocr_val,
+                                uint8_t prescaler = TIMER2_PRESCALER_64) {
     TCCR2 = (1 << WGM21) | (prescaler & 0x07); // CTC mode
-    OCR2  = ocr_val;
+    OCR2 = ocr_val;
     TIMSK |= (1 << OCIE2);
   }
 
@@ -319,12 +323,16 @@ public:
   }
 
   static inline void handleTimer2() {
-    if (timer2Callback) timer2Callback();
+    if (timer2Callback)
+      timer2Callback();
   }
 
   // --- Blocking delay (no interrupt needed) ---
   static inline void delay_ms(uint16_t ms) {
-    while (ms > 0) { _delay_ms(1); ms--; }
+    while (ms > 0) {
+      _delay_ms(1);
+      ms--;
+    }
   }
 };
 
@@ -374,15 +382,7 @@ public:
     }
   }
 
-  static inline void print(char c) {
-    transmit(c);
-  }
-
-  static inline void print(uint8_t value) {
-    char buf[4];
-    utoa(value, buf, 10);
-    print(buf);
-  }
+  static inline void print(char c) { transmit(c); }
 
   static inline void print(int16_t value) {
     char buf[8];
@@ -438,8 +438,8 @@ ISR(USART_RXC_vect) { UART.handleRxInterrupt(); }
 ISR(ADC_vect) { ADC.handleInterrupt(); }
 
 // Timer Interrupt Service Routines
-ISR(TIMER0_COMP_vect)  { Timer.handleTimer0(); }
+ISR(TIMER0_COMP_vect) { Timer.handleTimer0(); }
 ISR(TIMER1_COMPA_vect) { Timer.handleTimer1(); }
-ISR(TIMER2_COMP_vect)  { Timer.handleTimer2(); }
+ISR(TIMER2_COMP_vect) { Timer.handleTimer2(); }
 
 #endif // ATMEGA32A_DRIVER_HPP

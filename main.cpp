@@ -61,11 +61,11 @@ int main() {
 
   
   // --- Timer 0: 1ms tick (prescaler 64, OCR=124) ---
-  Timer.initTimer0(124, TIMER_PRESCALER_64);
+  Timer.initTimer0(124, TIMER0_PRESCALER_64);
   Timer.attachTimer0(onTimer0);
 
   // --- Timer 1: 1 second (prescaler 256, OCR=31249) ---
-  Timer.initTimer1(31249, TIMER_PRESCALER_256);
+  Timer.initTimer1(31249, TIMER1_PRESCALER_256);
   Timer.attachTimer1(onTimer1);
 
   // --- Timer 2: ~31ms tick (prescaler 1024, OCR=243) ---
