@@ -101,7 +101,7 @@ public:
 
   static inline void write(volatile uint8_t &port, uint8_t pin, uint8_t state) {
     if (pin == ALL) {
-      port = (state == HIGH) ? 0xFF : 0x00;
+      port = state;
     } else {
       if (state == HIGH) {
         port |= (1 << pin);
@@ -111,10 +111,18 @@ public:
     }
   }
 
+  static inline void write(volatile uint8_t &port, uint8_t value) {
+    port = value;
+  }
+
   static inline uint8_t read(volatile uint8_t &pin_reg, uint8_t pin) {
     if (pin == ALL)
       return pin_reg;
     return (pin_reg & (1 << pin)) ? HIGH : LOW;
+  }
+
+  static inline uint8_t read(volatile uint8_t &pin_reg) {
+    return pin_reg;
   }
 
   static inline void toggle(volatile uint8_t &port, uint8_t pin) {

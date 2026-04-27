@@ -40,11 +40,13 @@ GPIO.setDirection(DDRB, ALL, INPUT_PULLUP);  // Whole port with pull-ups
 
 // Write
 GPIO.write(PORTB, PB0, HIGH);
-GPIO.write(PORTB, ALL, LOW);
+GPIO.write(PORTB, ALL, 0xF0);  // Write raw byte to whole port (upper nibble high)
+GPIO.write(PORTB, 0xF0);       // Shorthand — same result
 
 // Read
 uint8_t val  = GPIO.read(PINB, PB0);   // Returns HIGH or LOW
 uint8_t port = GPIO.read(PINB, ALL);   // Returns raw port byte (0–255)
+uint8_t port = GPIO.read(PINB);        // Shorthand — same result
 
 // Toggle
 GPIO.toggle(PORTB, PB0);
