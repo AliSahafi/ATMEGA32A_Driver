@@ -33,24 +33,18 @@ Designed for students and educators to get an Arduino-like development experienc
 
 ### GPIO
 
-```cpp
-// Set direction
-GPIO.setDirection(DDRB, PB0, OUTPUT);
-GPIO.setDirection(DDRB, ALL, INPUT_PULLUP);  // Whole port with pull-ups
-
-// Write
-GPIO.write(PORTB, PB0, HIGH);
-GPIO.write(PORTB, ALL, 0xF0);  // Write raw byte to whole port (upper nibble high)
-GPIO.write(PORTB, 0xF0);       // Shorthand — same result
-
-// Read
-uint8_t val  = GPIO.read(PINB, PB0);   // Returns HIGH or LOW
-uint8_t port = GPIO.read(PINB, ALL);   // Returns raw port byte (0–255)
-uint8_t port = GPIO.read(PINB);        // Shorthand — same result
-
-// Toggle
-GPIO.toggle(PORTB, PB0);
-```
+| Method | Description |
+|---|---|
+| `GPIO.setDirection(DDRx, pin, OUTPUT)` | Set single pin direction |
+| `GPIO.setDirection(DDRx, ALL, INPUT_PULLUP)` | Set whole port direction |
+| `GPIO.write(PORTx, pin, HIGH/LOW)` | Write single pin |
+| `GPIO.write(PORTx, ALL, 0xF0)` | Write raw byte to whole port |
+| `GPIO.write(PORTx, 0xF0)` | Shorthand whole-port write |
+| `GPIO.read(PINx, pin)` | Read single pin — returns `HIGH` or `LOW` |
+| `GPIO.read(PINx, ALL)` | Read whole port — returns 0–255 |
+| `GPIO.read(PINx)` | Shorthand whole-port read |
+| `GPIO.toggle(PORTx, pin)` | Toggle single pin |
+| `GPIO.toggle(PORTx, ALL)` | Toggle whole port |
 
 **Constants:** `INPUT`, `OUTPUT`, `INPUT_PULLUP`, `HIGH`, `LOW`, `ALL`
 
@@ -58,21 +52,18 @@ GPIO.toggle(PORTB, PB0);
 
 ### ADC
 
-```cpp
-// Blocking (polling) read
-ADC.init(ADC_REF_AVCC, ADC_PRESCALER_64);
-uint16_t val = ADC.read(ADC_CHANNEL_0);   // Returns 0–1023
-
-// Interrupt-driven (single shot)
-ADC.init(ADC_REF_AVCC, ADC_PRESCALER_64, true);
-ADC.attachInterrupt(myCallback);           // void myCallback(uint16_t value)
-ADC.startConversion(ADC_CHANNEL_0);
-sei();
-
-// Continuous free-running (fastest, fully automatic)
-ADC.startContinuous(ADC_CHANNEL_0);
-ADC.stopContinuous();
-```
+| Method | Description |
+|---|---|
+| `ADC.init(ref, prescaler, interrupt)` | Configure reference, prescaler, optional interrupt |
+| `ADC.read(channel)` | Blocking read — waits for conversion, returns 0–1023 |
+| `ADC.startConversion(channel)` | Non-blocking single-shot conversion |
+| `ADC.startContinuous(channel)` | Free-running mode — auto-converts continuously |
+| `ADC.stopContinuous()` | Stop free-running mode |
+| `ADC.isReady()` | Returns `true` when conversion is complete |
+| `ADC.lastResult()` | Read last result without triggering a new conversion |
+| `ADC.stop()` | Disable ADC |
+| `ADC.start()` | Re-enable ADC |
+| `ADC.attachInterrupt(callback)` | Set conversion callback: `void cb(uint16_t value)` |
 
 **Reference:** `ADC_REF_AREF`, `ADC_REF_AVCC`, `ADC_REF_INTERNAL`  
 **Prescaler:** `ADC_PRESCALER_2/4/8/16/32/64/128`  
@@ -82,80 +73,60 @@ ADC.stopContinuous();
 
 ### UART
 
-```cpp
-UART.init(9600);                      // Polling mode
-UART.init(9600, true);                // RX interrupt enabled
-
-UART.transmit('A');                   // Send raw byte
-UART.print("Hello!\r\n");            // String
-UART.print(3.14f, 2);                // Float with decimal places
-UART.print((uint16_t)1023);          // Integer (all sizes supported)
-
-uint8_t byte = UART.receive();        // Blocking receive
-
-// Interrupt-driven RX callback
-UART.attachRxInterrupt(myCallback);   // void myCallback(uint8_t byte)
-sei();
-```
+| Method | Description |
+|---|---|
+| `UART.init(baud, interrupt)` | Configure baud rate, optional RX interrupt |
+| `UART.transmit(byte)` | Send raw byte |
+| `UART.print(value)` | Send string, char, int, uint, float (all types) |
+| `UART.receive()` | Blocking receive — waits for incoming byte |
+| `UART.attachRxInterrupt(callback)` | Set RX callback: `void cb(uint8_t byte)` |
 
 ---
 
 ### Timers (CTC Interrupt Mode)
 
-```cpp
-// Timer 0 — 8-bit, OCR max 255
-// Tick rate: F_CPU / (prescaler * (ocr + 1))
-Timer.initTimer0(124, TIMER0_PRESCALER_64);    // 1ms tick at 8MHz
-Timer.attachTimer0(myCallback);               // void myCallback()
+Tick rate: `F_CPU / (prescaler × (ocr + 1))`
 
-// Timer 1 — 16-bit, OCR max 65535
-Timer.initTimer1(31249, TIMER1_PRESCALER_256); // 1s tick at 8MHz
-Timer.attachTimer1(myCallback);
-
-// Timer 2 — 8-bit (uses TIMER2_PRESCALER_xxx!)
-Timer.initTimer2(243, TIMER2_PRESCALER_1024); // ~31ms tick at 8MHz
-Timer.attachTimer2(myCallback);
-
-// Blocking delay
-Timer.delay_ms(500);
-
-sei();  // Always call after setup to enable interrupts
-```
+| Method | Description |
+|---|---|
+| `Timer.initTimer0(ocr, prescaler)` | 8-bit CTC, OCR max 255 |
+| `Timer.initTimer1(ocr, prescaler)` | 16-bit CTC, OCR max 65535 |
+| `Timer.initTimer2(ocr, prescaler)` | 8-bit CTC, OCR max 255 |
+| `Timer.attachTimer0/1/2(callback)` | Set callback: `void cb()` |
+| `Timer.stop0/1/2()` | Halt counter (preserves config) |
+| `Timer.start0/1/2()` | Resume from current count |
+| `Timer.reset0/1/2()` | Set counter to 0 (keeps running) |
+| `Timer.restart0/1/2()` | Set counter to 0 and start |
+| `Timer.read0/2()` | Read 8-bit counter (0–255) |
+| `Timer.read1()` | Read 16-bit counter (0–65535) |
+| `Timer.delay_ms(ms)` | Blocking delay |
 
 **Timer0/1 Prescaler:** `TIMER0_PRESCALER_1/8/64/256/1024` — `TIMER1_PRESCALER_1/8/64/256/1024`  
 **Timer2 Prescaler:** `TIMER2_PRESCALER_1/8/32/64/128/256/1024` *(different encoding — always use `TIMER2_PRESCALER_xxx` for Timer2)*
 
-> ⚠️ **PWM conflict:** PWM uses Timer0 and Timer1 internally.
-
-> ⚠️ **PWM conflict:** PWM uses Timer0 and Timer1 internally. Do NOT use `Timer.initTimer0()` and `PWM.initTimer0_FastPWM()` at the same time.
+> ⚠️ **PWM conflict:** Do NOT use `Timer.initTimer0/1()` and `PWM.initTimer0/1_FastPWM()` at the same time.
 
 ---
 
 ### PWM
 
-```cpp
-// Timer 0 Fast-PWM → output pin: PB3
-PWM.initTimer0_FastPWM();
-PWM.setDutyCycleTimer0(128);          // 0–255 (50% duty cycle)
-
-// Timer 1 Fast-PWM 8-bit → output pins: PD4, PD5
-PWM.initTimer1_FastPWM_8bit();
-PWM.setDutyCycleTimer1A(200);
-PWM.setDutyCycleTimer1B(50);
-```
+| Method | Description |
+|---|---|
+| `PWM.initTimer0_FastPWM()` | Fast-PWM on PB3 |
+| `PWM.setDutyCycleTimer0(duty)` | Set Timer0 duty cycle, 0–255 |
+| `PWM.initTimer1_FastPWM_8bit()` | Fast-PWM on PD4 (OC1B) and PD5 (OC1A) |
+| `PWM.setDutyCycleTimer1A(duty)` | Set PD5 duty cycle, 0–255 |
+| `PWM.setDutyCycleTimer1B(duty)` | Set PD4 duty cycle, 0–255 |
 
 ---
 
 ### Seven-Segment Display
 
-The display is hardwired to **PORTB**. Just call:
+| Method | Description |
+|---|---|
+| `SevenSeg(digit)` | Display digit 0–9 on PORTB; any other value shows `E` |
 
-```cpp
-GPIO.setDirection(DDRB, ALL, OUTPUT);
-SevenSeg(7);   // Displays the digit "7" on the connected 7-segment display
-```
-
-Supports digits `0–9`. Any other value shows the letter `E` (error).
+Hardwired to **PORTB** — set `DDRB` to `OUTPUT` before calling.
 
 ---
 
