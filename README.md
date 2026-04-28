@@ -22,6 +22,19 @@ brew tap osx-cross/avr
 brew install avr-gcc avrdude make
 ```
 
+#### Windows
+Using [Scoop](https://scoop.sh/) (Recommended for PowerShell):
+```powershell
+scoop install avr-gcc avrdude make
+```
+
+Using [Chocolatey](https://chocolatey.org/):
+```powershell
+choco install avr-gcc avrdude make
+```
+
+> 💡 **Note for Windows:** You may need to use [Zadig](https://zadig.akeo.ie/) to install the `libusb-win32` driver for your **USBasp** programmer to work with `avrdude`.
+
 ### Building and Flashing
 
 To build the project and flash it to your ATMEGA32A using a USBasp programmer, simply run:
