@@ -7,25 +7,22 @@ Designed for students and educators to get an Arduino-like development experienc
 
 ## Getting Started
 
-### Step 1: Download & Extract
-Download the latest release from GitHub and extract the zip file to your workspace.
+### Step 1: Install the AVR Toolchain
 
-### Step 2: Install the AVR Toolchain
-
-#### Ubuntu / Debian
+### Ubuntu / Debian
 To install the AVR GCC toolchain, `avrdude`, and `make`:
 ```bash
 sudo apt-get update && sudo apt-get install -y gcc-avr binutils-avr avr-libc avrdude make
 ```
 
-#### macOS
+### macOS
 Using [Homebrew](https://brew.sh/):
 ```bash
 brew tap osx-cross/avr
 brew install avr-gcc avrdude make
 ```
 
-#### Windows
+### Windows
 Using [Scoop](https://scoop.sh/) (Recommended):
 ```powershell
 scoop install avr-gcc avrdude make
@@ -40,7 +37,7 @@ choco install avr-gcc avrdude make
 > 1. **Use the bundled driver (easiest):** Extract [`USBasp-win-driver-x86-x64-v3.0.7.zip`](USBasp-win-driver-x86-x64-v3.0.7.zip) included in this repo and run `InstallDriver.exe` (matching your CPU architecture).
 > 2. **Use Zadig:** Download [Zadig](https://zadig.akeo.ie/), plug in your USBasp, and replace its driver with `libusb-win32`.
 
-### Step 3: Build & Flash
+### Step 2: Build & Flash
 
 Navigate to the project directory and run:
 ```bash
