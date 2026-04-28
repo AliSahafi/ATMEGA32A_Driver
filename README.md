@@ -9,10 +9,17 @@ Designed for students and educators to get an Arduino-like development experienc
 
 ### Installation
 
-To install the required tools (AVR GCC toolchain, `avrdude`, and `make`) on Ubuntu/Debian, run:
-
+#### Ubuntu / Debian
+To install the AVR GCC toolchain, `avrdude`, and `make`:
 ```bash
 sudo apt-get update && sudo apt-get install -y gcc-avr binutils-avr avr-libc avrdude make
+```
+
+#### macOS
+Using [Homebrew](https://brew.sh/):
+```bash
+brew tap osx-cross/avr
+brew install avr-gcc avrdude make
 ```
 
 ### Building and Flashing
