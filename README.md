@@ -5,6 +5,26 @@ Designed for students and educators to get an Arduino-like development experienc
 
 ---
 
+## Getting Started
+
+### Installation
+
+To install the required tools (AVR GCC toolchain, `avrdude`, and `make`) on Ubuntu/Debian, run:
+
+```bash
+sudo apt-get update && sudo apt-get install -y gcc-avr binutils-avr avr-libc avrdude make
+```
+
+### Building and Flashing
+
+To build the project and flash it to your ATMEGA32A using a USBasp programmer, simply run:
+
+```bash
+make
+```
+
+---
+
 ## Features
 
 | Module | Capabilities |
