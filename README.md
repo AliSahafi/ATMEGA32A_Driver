@@ -7,7 +7,10 @@ Designed for students and educators to get an Arduino-like development experienc
 
 ## Getting Started
 
-### Installation
+### Step 1: Download & Extract
+Download the latest release from GitHub and extract the zip file to your workspace.
+
+### Step 2: Install the AVR Toolchain
 
 #### Ubuntu / Debian
 To install the AVR GCC toolchain, `avrdude`, and `make`:
@@ -23,25 +26,28 @@ brew install avr-gcc avrdude make
 ```
 
 #### Windows
-Using [Scoop](https://scoop.sh/) (Recommended for PowerShell):
+Using [Scoop](https://scoop.sh/) (Recommended):
 ```powershell
 scoop install avr-gcc avrdude make
 ```
 
-Using [Chocolatey](https://chocolatey.org/):
+Or using [Chocolatey](https://chocolatey.org/):
 ```powershell
 choco install avr-gcc avrdude make
 ```
 
-> 💡 **Note for Windows:** You may need to use [Zadig](https://zadig.akeo.ie/) to install the `libusb-win32` driver for your **USBasp** programmer to work with `avrdude`.
+> 💡 **Windows USBasp Users:** If using a USBasp programmer, Windows will not recognize it out of the box. You have two options:
+> 1. **Use the bundled driver (easiest):** Extract [`USBasp-win-driver-x86-x64-v3.0.7.zip`](USBasp-win-driver-x86-x64-v3.0.7.zip) included in this repo and run `InstallDriver.exe` (matching your CPU architecture).
+> 2. **Use Zadig:** Download [Zadig](https://zadig.akeo.ie/), plug in your USBasp, and replace its driver with `libusb-win32`.
 
-### Building and Flashing
+### Step 3: Build & Flash
 
-To build the project and flash it to your ATMEGA32A using a USBasp programmer, simply run:
-
+Navigate to the project directory and run:
 ```bash
 make
 ```
+
+This will compile and flash your ATMEGA32A using your configured programmer.
 
 ---
 
