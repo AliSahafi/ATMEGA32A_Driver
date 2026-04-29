@@ -1,7 +1,6 @@
 /*
  * ATmega32A Driver
  * Developed by Ali Sahafi <ali.sahafi@gmail.com> with help from Claude AI.
- * Open source.
  */
 
 #ifndef ATMEGA32A_DRIVER_HPP
