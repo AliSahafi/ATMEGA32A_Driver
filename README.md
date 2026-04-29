@@ -57,6 +57,7 @@ This will compile and flash your ATMEGA32A using your configured programmer.
 | **UART** | TX/RX, interrupt-driven RX with callback, overloaded `print()` for all types |
 | **Timers** | Timer0 (8-bit), Timer1 (16-bit), Timer2 (8-bit) — CTC interrupt mode |
 | **PWM** | Fast-PWM on Timer0 (PB3) and Timer1 (PD4, PD5) |
+| **SPI** | Master/Slave mode, hardware transfer, and STC interrupt |
 | **Seven-Segment** | Built-in `SevenSeg(digit)` → auto-outputs to PORTB |
 
 ---
@@ -160,6 +161,23 @@ Tick rate: `F_CPU / (prescaler × (ocr + 1))`
 | `PWM.initTimer1_FastPWM_8bit()` | Fast-PWM on PD4 (OC1B) and PD5 (OC1A) |
 | `PWM.setDutyCycleTimer1A(duty)` | Set PD5 duty cycle, 0–255 |
 | `PWM.setDutyCycleTimer1B(duty)` | Set PD4 duty cycle, 0–255 |
+
+---
+
+### SPI
+
+| Method | Description |
+|---|---|
+| `SPI.initMaster(mode, prescaler, dataOrder, interrupt)` | Configure as SPI Master |
+| `SPI.initSlave(mode, dataOrder, interrupt)` | Configure as SPI Slave |
+| `SPI.transfer(data)` | Synchronous block transfer (returns received byte) |
+| `SPI.attachInterrupt(callback)` | Set transfer complete callback: `void cb(uint8_t data)` |
+
+**Mode:** `SPI_MODE_0/1/2/3`  
+**Prescaler:** `SPI_PRESCALER_4/16/64/128`, `SPI_PRESCALER_2_2X/8_2X/32_2X/64_2X`  
+**Data Order:** `SPI_MSB_FIRST`, `SPI_LSB_FIRST`
+
+> 💡 **Pin config:** The `initMaster()` and `initSlave()` methods automatically configure the DDR registers for PB4(SS), PB5(MOSI), PB6(MISO), and PB7(SCK).
 
 ---
 

@@ -127,9 +127,7 @@ public:
     return (pin_reg & (1 << pin)) ? HIGH : LOW;
   }
 
-  static inline uint8_t read(volatile uint8_t &pin_reg) {
-    return pin_reg;
-  }
+  static inline uint8_t read(volatile uint8_t &pin_reg) { return pin_reg; }
 
   static inline void toggle(volatile uint8_t &port, uint8_t pin) {
     if (pin == ALL) {
@@ -213,13 +211,13 @@ public:
 
   static inline void stopContinuous() { ADCSRA &= ~(1 << ADATE); }
 
-  static inline void stop()  { ADCSRA &= ~(1 << ADEN); }
-  static inline void start() { ADCSRA |=  (1 << ADEN); }
+  static inline void stop() { ADCSRA &= ~(1 << ADEN); }
+  static inline void start() { ADCSRA |= (1 << ADEN); }
 
   static inline bool isReady() { return !(ADCSRA & (1 << ADSC)); }
 
   static inline uint16_t lastResult() {
-    uint8_t low  = ADCL;
+    uint8_t low = ADCL;
     uint8_t high = ADCH;
     return (high << 8) | low;
   }
@@ -311,13 +309,21 @@ public:
     TIMSK |= (1 << OCIE0);
   }
 
-  static inline void attachTimer0(void (*callback)()) { timer0Callback = callback; }
-  static inline void handleTimer0() { if (timer0Callback) timer0Callback(); }
+  static inline void attachTimer0(void (*callback)()) {
+    timer0Callback = callback;
+  }
+  static inline void handleTimer0() {
+    if (timer0Callback)
+      timer0Callback();
+  }
 
-  static inline void stop0()    { TCCR0 &= ~0x07; }
-  static inline void start0()   { TCCR0 |= timer0Prescaler; }
-  static inline void reset0()   { TCNT0 = 0; }
-  static inline void restart0() { TCNT0 = 0; start0(); }
+  static inline void stop0() { TCCR0 &= ~0x07; }
+  static inline void start0() { TCCR0 |= timer0Prescaler; }
+  static inline void reset0() { TCNT0 = 0; }
+  static inline void restart0() {
+    TCNT0 = 0;
+    start0();
+  }
 
   // --- Timer 1 (16-bit CTC) ---
   // Use OCR1A to set the compare value (up to 65535)
@@ -330,13 +336,21 @@ public:
     TIMSK |= (1 << OCIE1A);
   }
 
-  static inline void attachTimer1(void (*callback)()) { timer1Callback = callback; }
-  static inline void handleTimer1() { if (timer1Callback) timer1Callback(); }
+  static inline void attachTimer1(void (*callback)()) {
+    timer1Callback = callback;
+  }
+  static inline void handleTimer1() {
+    if (timer1Callback)
+      timer1Callback();
+  }
 
-  static inline void stop1()    { TCCR1B &= ~0x07; }
-  static inline void start1()   { TCCR1B |= timer1Prescaler; }
-  static inline void reset1()   { TCNT1 = 0; }
-  static inline void restart1() { TCNT1 = 0; start1(); }
+  static inline void stop1() { TCCR1B &= ~0x07; }
+  static inline void start1() { TCCR1B |= timer1Prescaler; }
+  static inline void reset1() { TCNT1 = 0; }
+  static inline void restart1() {
+    TCNT1 = 0;
+    start1();
+  }
 
   // --- Timer 2 (8-bit CTC) ---
   static inline void initTimer2(uint8_t ocr_val,
@@ -347,18 +361,26 @@ public:
     TIMSK |= (1 << OCIE2);
   }
 
-  static inline void attachTimer2(void (*callback)()) { timer2Callback = callback; }
-  static inline void handleTimer2() { if (timer2Callback) timer2Callback(); }
+  static inline void attachTimer2(void (*callback)()) {
+    timer2Callback = callback;
+  }
+  static inline void handleTimer2() {
+    if (timer2Callback)
+      timer2Callback();
+  }
 
-  static inline void stop2()    { TCCR2 &= ~0x07; }
-  static inline void start2()   { TCCR2 |= timer2Prescaler; }
-  static inline void reset2()   { TCNT2 = 0; }
-  static inline void restart2() { TCNT2 = 0; start2(); }
+  static inline void stop2() { TCCR2 &= ~0x07; }
+  static inline void start2() { TCCR2 |= timer2Prescaler; }
+  static inline void reset2() { TCNT2 = 0; }
+  static inline void restart2() {
+    TCNT2 = 0;
+    start2();
+  }
 
   // --- Read current counter value ---
-  static inline uint8_t  read0() { return TCNT0; }
+  static inline uint8_t read0() { return TCNT0; }
   static inline uint16_t read1() { return TCNT1; }
-  static inline uint8_t  read2() { return TCNT2; }
+  static inline uint8_t read2() { return TCNT2; }
 
   // --- Blocking delay (no interrupt needed) ---
   static inline void delay_ms(uint16_t ms) {
@@ -467,6 +489,100 @@ __attribute__((weak)) void (*UART_Driver::rxInterruptCallback)(uint8_t) =
 
 static UART_Driver UART;
 
+// ---------------------------------------------------------
+// SPI Driver
+// ---------------------------------------------------------
+#define SPI_MODE_0 0x00
+#define SPI_MODE_1 0x04
+#define SPI_MODE_2 0x08
+#define SPI_MODE_3 0x0C
+
+#define SPI_PRESCALER_4 0
+#define SPI_PRESCALER_16 1
+#define SPI_PRESCALER_64 2
+#define SPI_PRESCALER_128 3
+#define SPI_PRESCALER_2_2X 4
+#define SPI_PRESCALER_8_2X 5
+#define SPI_PRESCALER_32_2X 6
+#define SPI_PRESCALER_64_2X 7
+
+#define SPI_MSB_FIRST 0
+#define SPI_LSB_FIRST 1
+
+class SPI_Driver {
+private:
+  static void (*spiInterruptCallback)(uint8_t);
+
+public:
+  static inline void initMaster(uint8_t mode = SPI_MODE_0,
+                                uint8_t prescaler = SPI_PRESCALER_4,
+                                uint8_t dataOrder = SPI_MSB_FIRST,
+                                bool enableInterrupt = false) {
+    // Set MOSI (PB5), SCK (PB7) and SS (PB4) as output
+    DDRB |= (1 << PB5) | (1 << PB7) | (1 << PB4);
+    // Set MISO (PB6) as input
+    DDRB &= ~(1 << PB6);
+
+    uint8_t spcr = (1 << SPE) | (1 << MSTR) | mode | (prescaler & 0x03);
+    if (dataOrder == SPI_LSB_FIRST) {
+      spcr |= (1 << DORD);
+    }
+    if (enableInterrupt) {
+      spcr |= (1 << SPIE);
+    }
+
+    if (prescaler >= SPI_PRESCALER_2_2X) {
+      SPSR |= (1 << SPI2X);
+    } else {
+      SPSR &= ~(1 << SPI2X);
+    }
+
+    SPCR = spcr;
+  }
+
+  static inline void initSlave(uint8_t mode = SPI_MODE_0,
+                               uint8_t dataOrder = SPI_MSB_FIRST,
+                               bool enableInterrupt = false) {
+    // Set MISO (PB6) as output
+    DDRB |= (1 << PB6);
+    // Set MOSI (PB5), SCK (PB7), SS (PB4) as input
+    DDRB &= ~((1 << PB5) | (1 << PB7) | (1 << PB4));
+
+    uint8_t spcr = (1 << SPE) | mode;
+    if (dataOrder == SPI_LSB_FIRST) {
+      spcr |= (1 << DORD);
+    }
+    if (enableInterrupt) {
+      spcr |= (1 << SPIE);
+    }
+
+    SPCR = spcr;
+  }
+
+  static inline uint8_t transfer(uint8_t data) {
+    SPDR = data;
+    while (!(SPSR & (1 << SPIF)))
+      ;
+    return SPDR;
+  }
+
+  static inline void attachInterrupt(void (*callback)(uint8_t)) {
+    spiInterruptCallback = callback;
+  }
+
+  static inline void handleInterrupt() {
+    uint8_t data = SPDR;
+    if (spiInterruptCallback) {
+      spiInterruptCallback(data);
+    }
+  }
+};
+
+__attribute__((weak)) void (*SPI_Driver::spiInterruptCallback)(uint8_t) =
+    nullptr;
+
+static SPI_Driver SPI;
+
 // UART RX Interrupt Service Routine
 ISR(USART_RXC_vect) { UART.handleRxInterrupt(); }
 
@@ -477,5 +593,8 @@ ISR(ADC_vect) { ADC.handleInterrupt(); }
 ISR(TIMER0_COMP_vect) { Timer.handleTimer0(); }
 ISR(TIMER1_COMPA_vect) { Timer.handleTimer1(); }
 ISR(TIMER2_COMP_vect) { Timer.handleTimer2(); }
+
+// SPI Interrupt Service Routine
+ISR(SPI_STC_vect) { SPI.handleInterrupt(); }
 
 #endif // ATMEGA32A_DRIVER_HPP
