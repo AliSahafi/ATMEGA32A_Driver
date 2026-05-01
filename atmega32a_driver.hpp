@@ -408,7 +408,18 @@ private:
 
 public:
   static inline void init(uint32_t baudRate, bool enableRxInterrupt = false) {
-    uint16_t ubrr = (F_CPU / 16 / baudRate) - 1;
+
+    const bool doubleSpeed = true;
+    uint16_t ubrr;
+
+    if (doubleSpeed) {
+      UCSRA |= (1 << U2X);
+      ubrr = (F_CPU / 8 / baudRate) - 1;
+    } else {
+      UCSRA &= ~(1 << U2X);
+      ubrr = (F_CPU / 16 / baudRate) - 1;
+    }
+
     UBRRH = (unsigned char)(ubrr >> 8);
     UBRRL = (unsigned char)ubrr;
 
