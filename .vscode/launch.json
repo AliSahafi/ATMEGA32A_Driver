@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Build & Upload",
+    "command": "make upload",
+    "detail": "Compile and upload to ATmega32A"
+  },
+  {
+    "name": "Build Only",
+    "command": "make",
+    "detail": "Compile hex file"
+  },
+  {
+    "name": "Clean",
+    "command": "make clean",
+    "detail": "Remove build artifacts"
+  },
+  {
+    "name": "Set 8MHz Internal",
+    "command": "make internal-8mhz",
+    "detail": "Configure fuses for internal 8MHz"
+  },
+  {
+    "name": "Set External Crystal",
+    "command": "make external-xtal",
+    "detail": "Configure fuses for external crystal"
+  }
+]
