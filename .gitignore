@@ -10,7 +10,6 @@ a.out
 .DS_Store
 
 # VS Code / IDE
-.vscode/
 .cache/
 compile_commands.json
 
