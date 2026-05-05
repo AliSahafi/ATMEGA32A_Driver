@@ -80,25 +80,34 @@ class GPIO_Driver {
 public:
   static inline void setDirection(volatile uint8_t &ddr, uint8_t pin,
                                   uint8_t dir) {
-    volatile uint8_t *port = &ddr + 1; // In AVR, PORT is always DDR + 1
+    volatile uint8_t *actual_ddr = &ddr;
+
+    // Auto-correct if user accidentally passed PORT instead of DDR
+    if (actual_ddr == &PORTA) actual_ddr = &DDRA;
+    else if (actual_ddr == &PORTB) actual_ddr = &DDRB;
+    else if (actual_ddr == &PORTC) actual_ddr = &DDRC;
+    else if (actual_ddr == &PORTD) actual_ddr = &DDRD;
+
+    volatile uint8_t *port = actual_ddr + 1; // In AVR, PORT is always DDR + 1
+    
     if (pin == ALL) {
       if (dir == OUTPUT) {
-        ddr = 0xFF;
+        *actual_ddr = 0xFF;
       } else if (dir == INPUT_PULLUP) {
-        ddr = 0x00;
+        *actual_ddr = 0x00;
         *port = 0xFF; // Enable all pull-ups
       } else {
-        ddr = 0x00;
+        *actual_ddr = 0x00;
         *port = 0x00; // Disable all pull-ups
       }
     } else {
       if (dir == OUTPUT) {
-        ddr |= (1 << pin);
+        *actual_ddr |= (1 << pin);
       } else if (dir == INPUT_PULLUP) {
-        ddr &= ~(1 << pin);
+        *actual_ddr &= ~(1 << pin);
         *port |= (1 << pin); // Enable pull-up
       } else {
-        ddr &= ~(1 << pin);
+        *actual_ddr &= ~(1 << pin);
         *port &= ~(1 << pin); // Disable pull-up
       }
     }
