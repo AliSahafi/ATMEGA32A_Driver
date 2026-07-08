@@ -1,0 +1,141 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+
+\emergencystretch=2em
+\definecolor{codebg}{gray}{0.95}
+\lstset{language=C++, basicstyle=\ttfamily\small, keywordstyle=\color{blue!70!black},
+  commentstyle=\color{green!50!black}\itshape, backgroundcolor=\color{codebg},
+  frame=single, rulecolor=\color{black!20}, breaklines=true, showstringspaces=false,
+  tabsize=2, columns=flexible}
+
+\title{ATmega32A Driver Course \\ \Large Module 3 --- Timers (CTC Interrupt Mode)}
+\author{Ali Sahafi}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Theory}
+
+A hardware timer is a counter that increments automatically with every clock
+tick --- independently of your program. The ATmega32A has three:
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{Timer} & \textbf{Width} & \textbf{Max count} & \textbf{Compare register} \\
+\midrule
+Timer0 & 8-bit  & 255    & \texttt{OCR0}  \\
+Timer1 & 16-bit & 65535  & \texttt{OCR1A} \\
+Timer2 & 8-bit  & 255    & \texttt{OCR2}  \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+In \textbf{CTC mode} (\emph{Clear Timer on Compare match}) the counter runs
+from 0 up to the value in the compare register, fires an interrupt, resets to
+0, and starts again. Because the CPU clock is usually too fast to count
+directly, a \textbf{prescaler} divides it first. The interrupt frequency is:
+
+\begin{equation*}
+f_{\text{interrupt}} = \frac{F_{\text{CPU}}}{\text{prescaler} \cdot (\text{OCR} + 1)}
+\end{equation*}
+
+\paragraph{Worked example.} A 1-second tick at $F_{\text{CPU}} = 8$\,MHz:
+choose prescaler 256, then $\text{OCR} = \frac{8\,000\,000}{256 \cdot 1} - 1
+= 31249$. That exceeds 255, so it only fits the 16-bit Timer1 --- exactly
+what the example below uses.
+
+\section{Registers}
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Register} & \textbf{Role} & \textbf{Bits used by the driver} \\
+\midrule
+\texttt{TCCR0}, \texttt{TCCR2}   & Timer0/2 control & \texttt{WGM$x$1} (CTC), \texttt{CS} bits (prescaler) \\
+\texttt{TCCR1A}, \texttt{TCCR1B} & Timer1 control   & \texttt{WGM12} (CTC), \texttt{CS} bits (prescaler) \\
+\texttt{OCR0}, \texttt{OCR1A}, \texttt{OCR2} & Compare value & the ``count-to'' number \\
+\texttt{TCNT0}, \texttt{TCNT1}, \texttt{TCNT2} & Counter value & readable/resettable at any time \\
+\texttt{TIMSK} & Interrupt mask & \texttt{OCIE0}, \texttt{OCIE1A}, \texttt{OCIE2} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{API reference}
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Method} & \textbf{Description} \\
+\midrule
+\texttt{Timer.initTimer0(ocr, prescaler)} & 8-bit CTC, OCR max 255 \\
+\texttt{Timer.initTimer1(ocr, prescaler)} & 16-bit CTC, OCR max 65535 \\
+\texttt{Timer.initTimer2(ocr, prescaler)} & 8-bit CTC, OCR max 255 \\
+\texttt{Timer.attachTimer0/1/2(callback)} & Set callback: \texttt{void cb()} \\
+\texttt{Timer.stop0/1/2()} & Halt counter (preserves config) \\
+\texttt{Timer.start0/1/2()} & Resume from current count \\
+\texttt{Timer.reset0/1/2()} & Set counter to 0 (keeps running) \\
+\texttt{Timer.restart0/1/2()} & Set counter to 0 and start \\
+\texttt{Timer.read0/2()} & Read 8-bit counter (0--255) \\
+\texttt{Timer.read1()} & Read 16-bit counter (0--65535) \\
+\texttt{Timer.delay\_ms(ms)} & Blocking delay (no interrupt needed) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Prescalers:} \texttt{TIMER0\_PRESCALER\_1/8/64/256/1024},
+\texttt{TIMER1\_PRESCALER\_1/8/64/256/1024},
+\texttt{TIMER2\_PRESCALER\_1/8/32/64/128/256/1024}.
+
+\paragraph{Warning: Timer2 encoding.} Timer2's prescaler \emph{bit encoding}
+differs from Timer0/1 (it offers 32 and 128 as extra options). Always use the
+matching \texttt{TIMER2\_PRESCALER\_xxx} constants for Timer2 --- e.g.
+\texttt{TIMER0\_PRESCALER\_64} and \texttt{TIMER2\_PRESCALER\_64} are
+\emph{different} register values.
+
+\paragraph{Warning: PWM conflict.} Timer0 and Timer1 are shared with the PWM
+module. Never call \texttt{Timer.initTimer0/1()} and
+\texttt{PWM.initTimer0/1\_FastPWM()} in the same program --- they program the
+same \texttt{TCCR} registers.
+
+\paragraph{Don't forget \texttt{sei()}.} Timer interrupts only fire after
+global interrupts are enabled.
+
+\section{Example: 1-second LED blink, zero CPU load}
+
+\paragraph{Wiring.}
+\begin{itemize}
+  \item LED + 330\,$\Omega$ resistor from \textbf{PC0} to GND.
+\end{itemize}
+
+\paragraph{Build \& flash.} \texttt{make timer}
+
+\lstinputlisting{example.cpp}
+
+The main loop is empty --- the blink happens entirely ``in the background''
+via the interrupt. Callbacks run in interrupt context: keep them short, and
+declare variables shared with \texttt{main()} as \texttt{volatile}.
+
+\section{Exercises}
+
+\begin{enumerate}
+  \item Make the LED blink every 250\,ms instead of every second. Compute the
+        new OCR value (keep prescaler 256) before touching the code.
+  \item Compute OCR and prescaler for a \textbf{1\,ms} tick on
+        \textbf{Timer0} at 8\,MHz. Then build a stopwatch: count milliseconds
+        in the callback and print seconds on the seven-segment display.
+  \item Run Timer1 (1\,s, LED on PC0) and Timer2 ($\approx$31\,ms, LED on PC1)
+        simultaneously and observe that the two blink patterns are
+        independent.
+\end{enumerate}
+
+\end{document}

@@ -1,5 +1,12 @@
+// Capstone example -- all driver modules working together via interrupts.
+// Each module also has its own smaller lecture example in drivers/<module>/.
+
 #define F_CPU 8000000UL
-#include "atmega32a_driver.hpp"
+#include "drivers/adc/adc.hpp"
+#include "drivers/gpio/gpio.hpp"
+#include "drivers/sevenseg/sevenseg.hpp"
+#include "drivers/timer/timer.hpp"
+#include "drivers/uart/uart.hpp"
 
 volatile uint16_t ADC_result = 0;
 

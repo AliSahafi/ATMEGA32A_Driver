@@ -1,0 +1,93 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+
+\emergencystretch=2em
+\definecolor{codebg}{gray}{0.95}
+\lstset{language=C++, basicstyle=\ttfamily\small, keywordstyle=\color{blue!70!black},
+  commentstyle=\color{green!50!black}\itshape, backgroundcolor=\color{codebg},
+  frame=single, rulecolor=\color{black!20}, breaklines=true, showstringspaces=false,
+  tabsize=2, columns=flexible}
+
+\title{ATmega32A Driver Course \\ \Large Module 2 --- Seven-Segment Display}
+\author{Ali Sahafi}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Theory}
+
+A seven-segment display is simply \textbf{eight LEDs} (segments
+\emph{a}--\emph{g} plus the decimal point) arranged as a digit. In a
+\textbf{common-anode} display all LED anodes share the VCC pin, so a segment
+lights up when its cathode pin is pulled \textbf{LOW} --- the segments are
+\emph{active-low}. Displaying ``5'' just means turning on the right subset of
+segments (a, f, g, c, d).
+
+This driver is hardwired to \textbf{PORTB}: one call writes the complete
+segment pattern for a digit.
+
+\section{Pin mapping}
+
+The driver expects the display wired to PORTB as follows (each segment
+through a 330\,$\Omega$ resistor):
+
+\begin{center}
+\begin{tabular}{llllllllc}
+\toprule
+\textbf{PORTB bit} & PB0 & PB1 & PB2 & PB3 & PB4 & PB5 & PB6 & PB7 \\
+\midrule
+\textbf{Segment}   & e   & d   & c   & b   & f   & g   & a   & dp \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A bit value of \textbf{0 turns the segment on} (active-low, common-anode).
+For example digit 8 is \texttt{0b10000000}: every segment on, decimal
+point off.
+
+\section{API reference}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Method} & \textbf{Description} \\
+\midrule
+\texttt{SevenSeg(digit)} & Display digit 0--9 on PORTB; any other value shows \texttt{E} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The function also \emph{returns} the segment pattern it wrote, and PORTB
+must be configured as output first:
+\lstinline|GPIO.setDirection(DDRB, ALL, OUTPUT);|
+
+\section{Example: counting 0--9}
+
+\paragraph{Wiring.}
+\begin{itemize}
+  \item Common-anode 7-segment display: common pin to VCC, segments to
+        PB0--PB7 via 330\,$\Omega$ resistors (mapping table above).
+\end{itemize}
+
+\paragraph{Build \& flash.} \texttt{make sevenseg}
+
+\lstinputlisting{example.cpp}
+
+\section{Exercises}
+
+\begin{enumerate}
+  \item Combine this module with GPIO: count one step per \emph{button press}
+        instead of every 500\,ms.
+  \item Extend \texttt{SevenSeg()} with hexadecimal digits A--F. Derive the
+        segment patterns yourself using the pin-mapping table.
+  \item What changes if your display is \textbf{common-cathode} instead of
+        common-anode? Modify the driver accordingly (hint: one operator).
+\end{enumerate}
+
+\end{document}

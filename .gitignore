@@ -14,6 +14,13 @@ a.out
 .cache/
 compile_commands.json
 
+# LaTeX build artifacts (readme.tex handouts)
+*.aux
+*.log
+*.out
+*.synctex.gz
+drivers/*/readme.pdf
+
 # Temp files
 *.bak
 

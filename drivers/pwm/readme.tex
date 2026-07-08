@@ -1,0 +1,114 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+
+\emergencystretch=2em
+\definecolor{codebg}{gray}{0.95}
+\lstset{language=C++, basicstyle=\ttfamily\small, keywordstyle=\color{blue!70!black},
+  commentstyle=\color{green!50!black}\itshape, backgroundcolor=\color{codebg},
+  frame=single, rulecolor=\color{black!20}, breaklines=true, showstringspaces=false,
+  tabsize=2, columns=flexible}
+
+\title{ATmega32A Driver Course \\ \Large Module 4 --- PWM (Pulse Width Modulation)}
+\author{Ali Sahafi}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Theory}
+
+PWM produces an ``analog-like'' output from a digital pin by switching it on
+and off very fast. The fraction of time the pin is HIGH is the \textbf{duty
+cycle}: at 25\,\% duty an LED appears dim, at 100\,\% fully bright. The
+switching is far too fast for the eye (or a motor) to notice --- only the
+\emph{average} voltage matters:
+
+\begin{equation*}
+V_{\text{avg}} = V_{\text{CC}} \cdot \frac{\text{duty}}{255}
+\end{equation*}
+
+In \textbf{Fast PWM} mode the timer counts 0--255 continuously; the output
+pin is HIGH while the counter is below the compare register and LOW above
+it. Writing the compare register therefore \emph{is} setting the duty cycle.
+With the driver's fixed prescaler of 8:
+
+\begin{equation*}
+f_{\text{PWM}} = \frac{F_{\text{CPU}}}{8 \cdot 256} \approx 3.9\,\text{kHz at } 8\,\text{MHz}
+\end{equation*}
+
+PWM uses dedicated output pins --- the compare hardware drives them directly:
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{Channel} & \textbf{Pin} & \textbf{Timer} & \textbf{Duty register} \\
+\midrule
+OC0  & PB3 & Timer0 & \texttt{OCR0}  \\
+OC1A & PD5 & Timer1 & \texttt{OCR1A} \\
+OC1B & PD4 & Timer1 & \texttt{OCR1B} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{API reference}
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Method} & \textbf{Description} \\
+\midrule
+\texttt{PWM.initTimer0\_FastPWM()} & Fast-PWM on PB3 (pin set to output automatically) \\
+\texttt{PWM.setDutyCycleTimer0(duty)} & Set Timer0 duty cycle, 0--255 \\
+\texttt{PWM.initTimer1\_FastPWM\_8bit()} & Fast-PWM on PD4 (OC1B) and PD5 (OC1A) \\
+\texttt{PWM.setDutyCycleTimer1A(duty)} & Set PD5 duty cycle, 0--255 \\
+\texttt{PWM.setDutyCycleTimer1B(duty)} & Set PD4 duty cycle, 0--255 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Warning: Timer conflict.} PWM occupies the timer hardware, so the
+CTC functions of Module 3 and the PWM functions must never share a timer:
+\begin{itemize}
+  \item \texttt{Timer.initTimer0()} conflicts with \texttt{PWM.initTimer0\_FastPWM()}
+  \item \texttt{Timer.initTimer1()} conflicts with \texttt{PWM.initTimer1\_FastPWM\_8bit()}
+\end{itemize}
+Both write the same \texttt{TCCR} registers, and the later call silently
+breaks the earlier one. Timer2 remains free for CTC interrupts alongside PWM.
+
+\section{Example: breathing LED}
+
+\paragraph{Wiring.}
+\begin{itemize}
+  \item LED + 330\,$\Omega$ resistor from \textbf{PB3} (OC0) to GND.
+\end{itemize}
+
+\paragraph{Build \& flash.} \texttt{make pwm}
+
+\lstinputlisting{example.cpp}
+
+Note the loop variables: counting \emph{up} uses \texttt{uint16\_t} and
+counting \emph{down} uses a signed \texttt{int16\_t} --- an 8-bit
+\texttt{uint8\_t} could never exit either loop. Why?
+
+\section{Exercises}
+
+\begin{enumerate}
+  \item The brightness change looks ``front-loaded'': most of the visible
+        change happens at low duty values. Why? (Hint: the human eye responds
+        logarithmically.) Try stepping through a table of perceptually-spaced
+        duty values instead.
+  \item Use \texttt{initTimer1\_FastPWM\_8bit()} to fade two LEDs on PD4 and
+        PD5 in \emph{opposite} directions (one brightens while the other dims).
+  \item Connect the potentiometer from the ADC module (Module 5) and set the
+        LED brightness from the potentiometer position: 10-bit ADC value
+        $\rightarrow$ 8-bit duty cycle.
+\end{enumerate}
+
+\end{document}

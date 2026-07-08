@@ -1,0 +1,111 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+
+\emergencystretch=2em
+\definecolor{codebg}{gray}{0.95}
+\lstset{language=C++, basicstyle=\ttfamily\small, keywordstyle=\color{blue!70!black},
+  commentstyle=\color{green!50!black}\itshape, backgroundcolor=\color{codebg},
+  frame=single, rulecolor=\color{black!20}, breaklines=true, showstringspaces=false,
+  tabsize=2, columns=flexible}
+
+\title{ATmega32A Driver Course \\ \Large Module 6 --- UART (Serial Communication)}
+\author{Ali Sahafi}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Theory}
+
+The UART (\emph{Universal Asynchronous Receiver/Transmitter}) sends bytes
+over a single wire per direction: \textbf{TXD} (PD1) transmits,
+\textbf{RXD} (PD0) receives. ``Asynchronous'' means there is no clock wire
+--- both sides must agree on the \textbf{baud rate} (bits per second) in
+advance. Each byte travels as a \emph{frame}: 1 start bit, 8 data bits, 1
+stop bit (``8N1''), so at 9600 baud you get at most 960 bytes/s.
+
+The hardware generates the baud rate by dividing the CPU clock. This driver
+always enables \textbf{double speed mode} (\texttt{U2X}), which halves the
+divider and reduces rounding error:
+
+\begin{equation*}
+\text{UBRR} = \frac{F_{\text{CPU}}}{8 \cdot \text{baud}} - 1
+\end{equation*}
+
+This is why a correct \texttt{F\_CPU} is critical: if it doesn't match the
+real clock, the baud rate is wrong and the terminal shows garbage.
+
+\section{Registers}
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Register} & \textbf{Role} & \textbf{Bits used by the driver} \\
+\midrule
+\texttt{UBRRH/UBRRL} & Baud rate divider & 12-bit UBRR value \\
+\texttt{UCSRA} & Status & \texttt{U2X}, \texttt{UDRE} (TX ready), \texttt{RXC} (byte received) \\
+\texttt{UCSRB} & Enable & \texttt{RXEN}, \texttt{TXEN}, \texttt{RXCIE} (RX interrupt) \\
+\texttt{UCSRC} & Frame format & \texttt{URSEL}, \texttt{UCSZ1:0} = 8 data bits \\
+\texttt{UDR}   & Data & write to send, read to receive \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{API reference}
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Method} & \textbf{Description} \\
+\midrule
+\texttt{UART.init(baud, interrupt)} & Configure baud rate, optional RX interrupt \\
+\texttt{UART.transmit(byte)} & Send raw byte \\
+\texttt{UART.print(value)} & Send string, char, int, uint or float (overloaded) \\
+\texttt{UART.print(float, decimals)} & Float with chosen decimal places (default 2) \\
+\texttt{UART.receive()} & Blocking receive --- waits for incoming byte \\
+\texttt{UART.attachRxInterrupt(callback)} & Set RX callback: \texttt{void cb(uint8\_t byte)} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Receiving can be \textbf{blocking} (\texttt{receive()} halts until a byte
+arrives) or \textbf{interrupt-driven} (pass \texttt{true} to \texttt{init}
+and attach a callback --- bytes then arrive ``by themselves'' while your main
+loop does other work; remember \texttt{sei()}).
+
+\section{Example: serial echo + uptime printer}
+
+\paragraph{Wiring} (a USB--serial adapter, e.g. CP2102 or FT232):
+\begin{itemize}
+  \item \textbf{PD0 (RXD)} $\leftarrow$ adapter \textbf{TX}
+  \item \textbf{PD1 (TXD)} $\rightarrow$ adapter \textbf{RX}
+  \item GND $\leftrightarrow$ GND (common ground is mandatory!)
+\end{itemize}
+Open a serial terminal at \textbf{9600 baud, 8N1}.
+
+\paragraph{Build \& flash.} \texttt{make uart}
+
+\lstinputlisting{example.cpp}
+
+\section{Exercises}
+
+\begin{enumerate}
+  \item Turn the echo into a \emph{command interpreter}: \texttt{'1'} switches
+        an LED on, \texttt{'0'} switches it off, anything else prints
+        \texttt{"?"}.
+  \item Compute UBRR for 9600 baud at $F_{\text{CPU}} = 1$\,MHz (the factory
+        default clock!) with U2X enabled. How large is the rounding error, and
+        what do you expect to see in the terminal?
+  \item Combine with Module 5: print the ADC value of the potentiometer once
+        per second, and use a serial-plotter tool to graph it live.
+\end{enumerate}
+
+\end{document}

@@ -1,0 +1,127 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+
+\emergencystretch=2em
+\definecolor{codebg}{gray}{0.95}
+\lstset{language=C++, basicstyle=\ttfamily\small, keywordstyle=\color{blue!70!black},
+  commentstyle=\color{green!50!black}\itshape, backgroundcolor=\color{codebg},
+  frame=single, rulecolor=\color{black!20}, breaklines=true, showstringspaces=false,
+  tabsize=2, columns=flexible}
+
+\title{ATmega32A Driver Course \\ \Large Module 5 --- ADC (Analog-to-Digital Converter)}
+\author{Ali Sahafi}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Theory}
+
+The ADC converts a voltage into a number. The ATmega32A has one
+\textbf{10-bit} ADC with an 8-channel multiplexer on \textbf{PORTA}
+(ADC0--ADC7 = PA0--PA7): one converter, eight selectable inputs.
+
+With 10 bits the result is 0--1023, measured relative to a
+\textbf{reference voltage} $V_{\text{ref}}$:
+
+\begin{equation*}
+\text{result} = \frac{V_{\text{in}}}{V_{\text{ref}}} \cdot 1024
+\qquad\Longleftrightarrow\qquad
+V_{\text{in}} = \frac{\text{result}}{1024} \cdot V_{\text{ref}}
+\end{equation*}
+
+Three reference options: the \texttt{AREF} pin (\texttt{ADC\_REF\_AREF}),
+the supply voltage AVCC (\texttt{ADC\_REF\_AVCC}, the usual choice) or the
+internal 2.56\,V bandgap (\texttt{ADC\_REF\_INTERNAL}).
+
+\paragraph{Prescaler.} The ADC needs a clock between 50 and 200\,kHz for full
+resolution. The prescaler divides $F_{\text{CPU}}$ down into that window: at
+8\,MHz, prescaler 64 gives 125\,kHz --- the driver default. One conversion
+takes about 13 ADC clock cycles ($\approx$\,100\,$\mu$s).
+
+\section{Registers}
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Register} & \textbf{Role} & \textbf{Bits used by the driver} \\
+\midrule
+\texttt{ADMUX}  & Reference + channel select & \texttt{REFS1:0}, \texttt{MUX2:0} \\
+\texttt{ADCSRA} & Control and status & \texttt{ADEN}, \texttt{ADSC}, \texttt{ADATE}, \texttt{ADIE}, \texttt{ADPS2:0} \\
+\texttt{ADCL/ADCH} & 10-bit result & read \texttt{ADCL} first, then \texttt{ADCH}! \\
+\texttt{SFIOR}  & Auto-trigger source & \texttt{ADTS2:0} = 000 (free running) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{API reference}
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Method} & \textbf{Description} \\
+\midrule
+\texttt{ADC.init(ref, prescaler, interrupt)} & Configure reference, prescaler, optional interrupt \\
+\texttt{ADC.read(channel)} & Blocking read --- waits for conversion, returns 0--1023 \\
+\texttt{ADC.startConversion(channel)} & Non-blocking single-shot conversion \\
+\texttt{ADC.startContinuous(channel)} & Free-running mode --- auto-converts continuously \\
+\texttt{ADC.stopContinuous()} & Stop free-running mode \\
+\texttt{ADC.isReady()} & Returns \texttt{true} when conversion is complete \\
+\texttt{ADC.lastResult()} & Read last result without triggering a new conversion \\
+\texttt{ADC.stop()} / \texttt{ADC.start()} & Disable / re-enable the ADC \\
+\texttt{ADC.attachInterrupt(callback)} & Set conversion callback: \texttt{void cb(uint16\_t value)} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{itemize}
+  \item \textbf{Reference:} \texttt{ADC\_REF\_AREF}, \texttt{ADC\_REF\_AVCC}, \texttt{ADC\_REF\_INTERNAL}
+  \item \textbf{Prescaler:} \texttt{ADC\_PRESCALER\_2/4/8/16/32/64/128}
+  \item \textbf{Channel:} \texttt{ADC\_CHANNEL\_0} \dots\ \texttt{ADC\_CHANNEL\_7}
+\end{itemize}
+
+Three usage styles, from simplest to most advanced:
+\begin{itemize}
+  \item \textbf{blocking:} \texttt{read()} --- the CPU waits for the conversion
+  \item \textbf{polling:} \texttt{startConversion()}, then \texttt{isReady()} + \texttt{lastResult()}
+  \item \textbf{interrupt-driven:} \texttt{startContinuous()} + callback --- see the
+        capstone \texttt{example.cpp} in the repository root
+\end{itemize}
+
+\section{Example: potentiometer bar graph}
+
+\paragraph{Wiring.}
+\begin{itemize}
+  \item Potentiometer ($\geq$1\,k$\Omega$): outer pins to VCC and GND, wiper to \textbf{PA0}.
+  \item 8 LEDs + 330\,$\Omega$ resistors from \textbf{PC0--PC7} to GND.
+  \item \textbf{AVCC must be connected to VCC} --- the ADC is powered from the AVCC pin.
+\end{itemize}
+
+\paragraph{Build \& flash.} \texttt{make adc}
+
+\lstinputlisting{example.cpp}
+
+\section{Exercises}
+
+\begin{enumerate}
+  \item The pot is at mid-position. What value does \texttt{ADC.read()}
+        return (roughly), and what voltage does that correspond to at
+        $V_{\text{ref}} = 5$\,V?
+  \item Rewrite the example in the \emph{polling} style
+        (\texttt{startConversion} / \texttt{isReady} / \texttt{lastResult})
+        so the LED bar updates while the main loop stays free to blink a
+        ninth ``heartbeat'' LED.
+  \item Connect an LM35 temperature sensor (10\,mV/$^{\circ}$C) to ADC1 and
+        compute the temperature in degrees. Which reference gives better
+        resolution for this sensor: AVCC (5\,V) or internal 2.56\,V?
+\end{enumerate}
+
+\end{document}

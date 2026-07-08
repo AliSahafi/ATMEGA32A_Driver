@@ -3,6 +3,12 @@
 A clean, lightweight, header-only C++ driver for the **ATMEGA32A** microcontroller.  
 Designed for students and educators to get an Arduino-like development experience without any external frameworks.
 
+The driver is split into **independent modules**, one folder per peripheral under [`drivers/`](drivers/). Each folder contains:
+
+- `<module>.hpp` — the driver (header-only, include just what you need)
+- `example.cpp` — a minimal lecture example for that peripheral (`make <module>` flashes it)
+- `readme.tex` — a printable LaTeX handout for students (theory, registers, API, wiring, exercises)
+
 ---
 
 ## Getting Started
@@ -41,10 +47,22 @@ choco install avr-gcc avrdude make
 
 Navigate to the project directory and run:
 ```bash
-make
+make            # compile and flash main.cpp
 ```
 
-This will compile and flash your ATMEGA32A using your configured programmer.
+Each module's lecture example is one command away:
+```bash
+make gpio       # flash drivers/gpio/example.cpp   (button + LED)
+make sevenseg   # flash drivers/sevenseg/example.cpp (0-9 counter)
+make timer      # flash drivers/timer/example.cpp  (1 s interrupt blink)
+make pwm        # flash drivers/pwm/example.cpp    (breathing LED)
+make adc        # flash drivers/adc/example.cpp    (potentiometer bar graph)
+make uart       # flash drivers/uart/example.cpp   (serial echo)
+make spi        # flash drivers/spi/example.cpp    (loopback test)
+make example    # flash example.cpp                (capstone: everything together)
+```
+
+To compile without flashing: `make build SRC=path/to/file.cpp`
 
 ---
 
@@ -52,13 +70,15 @@ This will compile and flash your ATMEGA32A using your configured programmer.
 
 | Module | Capabilities |
 |---|---|
-| **GPIO** | `OUTPUT`, `INPUT`, `INPUT_PULLUP` — per-pin or whole port at once |
-| **ADC** | Blocking read, single-shot interrupt, free-running continuous mode |
-| **UART** | TX/RX, interrupt-driven RX with callback, overloaded `print()` for all types |
-| **Timers** | Timer0 (8-bit), Timer1 (16-bit), Timer2 (8-bit) — CTC interrupt mode |
-| **PWM** | Fast-PWM on Timer0 (PB3) and Timer1 (PD4, PD5) |
-| **SPI** | Master/Slave mode, hardware transfer, and STC interrupt |
-| **Seven-Segment** | Built-in `SevenSeg(digit)` → auto-outputs to PORTB |
+| [**GPIO**](drivers/gpio/) | `OUTPUT`, `INPUT`, `INPUT_PULLUP` — per-pin or whole port at once |
+| [**Seven-Segment**](drivers/sevenseg/) | Built-in `SevenSeg(digit)` → auto-outputs to PORTB |
+| [**Timers**](drivers/timer/) | Timer0 (8-bit), Timer1 (16-bit), Timer2 (8-bit) — CTC interrupt mode |
+| [**PWM**](drivers/pwm/) | Fast-PWM on Timer0 (PB3) and Timer1 (PD4, PD5) |
+| [**ADC**](drivers/adc/) | Blocking read, single-shot interrupt, free-running continuous mode |
+| [**UART**](drivers/uart/) | TX/RX, interrupt-driven RX with callback, overloaded `print()` for all types |
+| [**SPI**](drivers/spi/) | Master/Slave mode, hardware transfer, and STC interrupt |
+
+The table follows the suggested lecture order. Shared constants and the `F_CPU` handling live in [`drivers/common/`](drivers/common/) and are included automatically.
 
 ---
 
@@ -66,9 +86,14 @@ This will compile and flash your ATMEGA32A using your configured programmer.
 
 ### Setup
 
+Include only the modules you use — unused peripherals then cost no flash and no interrupt vectors:
+
 ```cpp
-#define F_CPU 8000000UL     // Define BEFORE including the driver!
-#include "atmega32a_driver.hpp"
+#define F_CPU 8000000UL     // Define BEFORE including any driver!
+#include "drivers/gpio/gpio.hpp"
+#include "drivers/uart/uart.hpp"
+// drivers/sevenseg/sevenseg.hpp, drivers/timer/timer.hpp, drivers/pwm/pwm.hpp,
+// drivers/adc/adc.hpp, drivers/spi/spi.hpp
 ```
 
 > ⚠️ If `F_CPU` is not defined, the driver defaults to 8MHz and shows a compiler warning.
@@ -195,7 +220,11 @@ Hardwired to **PORTB** — set `DDRB` to `OUTPUT` before calling.
 
 ```cpp
 #define F_CPU 8000000UL
-#include "atmega32a_driver.hpp"
+#include "drivers/adc/adc.hpp"
+#include "drivers/gpio/gpio.hpp"
+#include "drivers/sevenseg/sevenseg.hpp"
+#include "drivers/timer/timer.hpp"
+#include "drivers/uart/uart.hpp"
 
 volatile uint16_t ADC_result = 0;
 
@@ -229,12 +258,23 @@ int main() {
 ## File Structure
 
 ```
-main/
-├── atmega32a_driver.hpp   # The complete driver (header-only)
-├── main.cpp               # Your application code
-├── Makefile               # Build & flash pipeline
+ATMEGA32A_Driver/
+├── drivers/
+│   ├── common/            # Shared constants + F_CPU handling (+ readme.tex)
+│   ├── gpio/              # Each module folder contains:
+│   ├── sevenseg/          #   <module>.hpp   — the driver
+│   ├── timer/             #   example.cpp    — lecture example (make <module>)
+│   ├── pwm/               #   readme.tex     — printable student handout
+│   ├── adc/
+│   ├── uart/
+│   └── spi/
+├── main.cpp               # Your application code (make)
+├── example.cpp            # Capstone example — all modules together (make example)
+├── Makefile               # Build & flash pipeline + fuse targets
 └── README.md              # This file
 ```
+
+Each `readme.tex` compiles standalone with `pdflatex readme.tex` (run inside the module folder).
 
 ---
 
