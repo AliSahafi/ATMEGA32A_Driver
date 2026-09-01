@@ -19,7 +19,6 @@ compile_commands.json
 *.log
 *.out
 *.synctex.gz
-drivers/*/readme.pdf
 
 # Temp files
 *.bak
